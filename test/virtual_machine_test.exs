@@ -41,8 +41,23 @@ defmodule SynacoreChallengeTest do
             == 444
   end
 
+  test "updates the cursor by the given amount" do
+    assert VirtualMachine.update_cursor({0, [4,3], [], []}, 2) == {2, [4,3], [], []}
+    assert VirtualMachine.update_cursor({1, [5,3], [77], [66]}, 1) == {2, [5,3], [77], [66]}
+  end
+
   test "operation 0-halt: stops execution and terminates the program" do
     assert catch_exit(VirtualMachine.run_instructions([0])) == :shutdown
+  end
+
+  test "operation 6-jump: offset to new cursor is provided (positive offset)" do
+    new_cursor_offset = VirtualMachine.jump_operation({0, [6, 66], [], []})
+    assert new_cursor_offset == 66
+  end
+
+  test "operation 6-jump: offset to new cursor is provided (negative offset)" do
+    new_cursor_offset = VirtualMachine.jump_operation({3, [21, 21, 21, 6, 1], [], []})
+    assert new_cursor_offset == -2
   end
 
   test "operation 19-out: prints the given (ASCII) value to the console" do
@@ -60,11 +75,6 @@ defmodule SynacoreChallengeTest do
     end)
 
     assert console_out == "Y"
-  end
-
-  test "operation 6-jump: cursor is updated to the given memory address" do
-    new_cursor = VirtualMachine.jump_operation(0, [6, 66], [[],[],[],[],[],[],[],[]])
-    assert new_cursor == 66
   end
 
 end
