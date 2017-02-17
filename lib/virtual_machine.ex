@@ -32,6 +32,9 @@ defmodule VirtualMachine do
       6 ->
         new_cursor_offset = jump_operation(state)
         update_cursor(state, new_cursor_offset)
+      7 ->
+        new_cursor_offset = jump_if_not_zero(state)
+        update_cursor(state, new_cursor_offset)
       19 ->
         out_operation(cursor, instructions, registers)
         update_cursor(state, 2)
@@ -43,7 +46,17 @@ defmodule VirtualMachine do
     do_run_instructions(new_state)
   end
 
-  def jump_operation({cursor, instructions, registers, stack}) do
+  def jump_if_not_zero(state={cursor, instructions, registers, _stack}) do
+    if (Enum.at(instructions, cursor+1) == 0) do
+      3
+    else
+      new_cursor_or_its_address = Enum.at(instructions, cursor+2)
+      new_cursor = get_argument_value(new_cursor_or_its_address, instructions, registers)
+      new_cursor - cursor
+    end
+  end
+
+  def jump_operation({cursor, instructions, registers, _stack}) do
     new_cursor_or_its_address = Enum.at(instructions, cursor+1)
     new_cursor = get_argument_value(new_cursor_or_its_address, instructions, registers)
     new_cursor - cursor

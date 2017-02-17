@@ -4,11 +4,11 @@ defmodule SynacoreChallengeTest do
 
   #VM does not complain if it encounters values described as invalid in the arch-spec
 
-  test "run whole program" do
-    binary = File.read!("./docs/challenge.bin")
-    instructions = VirtualMachine.load_binary(binary)
-    VirtualMachine.run_instructions(instructions)
-  end
+  #test "run whole program" do
+  #  binary = File.read!("./docs/challenge.bin")
+  #  instructions = VirtualMachine.load_binary(binary)
+  #  VirtualMachine.run_instructions(instructions)
+  #end
 
   test "loads little endian 16-bit binary input into memory" do
     little_endian_binary_input = <<21, 0, 19, 15, 133, 1, "\n">>
@@ -50,14 +50,26 @@ defmodule SynacoreChallengeTest do
     assert catch_exit(VirtualMachine.run_instructions([0])) == :shutdown
   end
 
-  test "operation 6-jump: offset to new cursor is provided (positive offset)" do
+  test "operation 6-jmp: offset to new cursor is provided (positive offset)" do
     new_cursor_offset = VirtualMachine.jump_operation({0, [6, 66], [], []})
     assert new_cursor_offset == 66
   end
 
-  test "operation 6-jump: offset to new cursor is provided (negative offset)" do
+  test "operation 6-jmp: offset to new cursor is provided (negative offset)" do
     new_cursor_offset = VirtualMachine.jump_operation({3, [21, 21, 21, 6, 1], [], []})
     assert new_cursor_offset == -2
+  end
+
+  test "operation 7-jt: moves to next instruction if first parameter is zero" do
+    state = {0, [7, 0, 42, 0], [], []}
+    new_cursor_offset = VirtualMachine.jump_if_not_zero(state)
+    assert new_cursor_offset == 3
+  end
+
+  test "operation 7-jt: moves to next parameter if first parameter is nonzero" do
+    state = {0, [7, 1, 42, 0], [], []}
+    new_cursor_offset = VirtualMachine.jump_if_not_zero(state)
+    assert new_cursor_offset == 42
   end
 
   test "operation 19-out: prints the given (ASCII) value to the console" do
