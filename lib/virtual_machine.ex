@@ -19,13 +19,15 @@ defmodule VirtualMachine do
 
 
 
-
   def run_instructions(instructions) do
-    do_run_instructions({0, instructions, [[],[],[],[],[],[],[],[]], []})
+    do_run_instructions({0, instructions, [[0],[0],[0],[0],[0],[0],[0],[0]], []})
   end
 
   def do_run_instructions(state = {cursor, instructions, registers, stack}) do
     current_instruction = Enum.at(instructions, cursor)
+#IO.puts current_instruction
+#IO.puts (Enum.at(instructions, cursor+1))
+#IO.puts (Enum.at(instructions, cursor+2))
     new_state = case current_instruction do
       0 ->
         exit (:shutdown)
@@ -33,7 +35,10 @@ defmodule VirtualMachine do
         new_cursor_offset = jump_operation(state)
         update_cursor(state, new_cursor_offset)
       7 ->
-        new_cursor_offset = jump_if_not_zero(state)
+        new_cursor_offset = jump_to_2nd_param_if_not_zero(state)
+        update_cursor(state, new_cursor_offset)
+      8 ->
+        new_cursor_offset = jump_to_2nd_param_if_zero(state)
         update_cursor(state, new_cursor_offset)
       19 ->
         out_operation(cursor, instructions, registers)
@@ -46,13 +51,23 @@ defmodule VirtualMachine do
     do_run_instructions(new_state)
   end
 
-  def jump_if_not_zero(state={cursor, instructions, registers, _stack}) do
+  def jump_to_2nd_param_if_not_zero(state={cursor, instructions, registers, _stack}) do
     if (Enum.at(instructions, cursor+1) == 0) do
       3
     else
       new_cursor_or_its_address = Enum.at(instructions, cursor+2)
       new_cursor = get_argument_value(new_cursor_or_its_address, instructions, registers)
       new_cursor - cursor
+    end
+  end
+
+  def jump_to_2nd_param_if_zero(state={cursor, instructions, registers, _stack}) do
+    if (Enum.at(instructions, cursor+1) == 0) do
+      new_cursor_or_its_address = Enum.at(instructions, cursor+2)
+      new_cursor = get_argument_value(new_cursor_or_its_address, instructions, registers)
+      new_cursor - cursor
+    else
+      3
     end
   end
 
