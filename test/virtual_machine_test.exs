@@ -4,11 +4,11 @@ defmodule SynacoreChallengeTest do
 
   #VM does not complain if it encounters values described as invalid in the arch-spec
 
-  test "run whole program" do
-    binary = File.read!("./docs/challenge.bin")
-    instructions = VirtualMachine.load_binary(binary)
-    VirtualMachine.run_instructions(instructions)
-  end
+  #test "run whole program" do
+  #  binary = File.read!("./docs/challenge.bin")
+  #  instructions = VirtualMachine.load_binary(binary)
+  #  VirtualMachine.run_instructions(instructions)
+  #end
 
   test "loads little endian 16-bit binary input into memory" do
     little_endian_binary_input = <<21, 0, 19, 15, 133, 1, "\n">>
@@ -25,19 +25,19 @@ defmodule SynacoreChallengeTest do
 
   test "reads the value from first register if value is first register address" do
     # register address starts at 32768
-    assert VirtualMachine.get_argument_value(32768, [6, 32768], [[55],[],[],[],[],[],[],[]])
+    assert VirtualMachine.get_argument_value(32768, [6, 32768], [55,0,0,0,0,0,0,0])
             == 55
   end
 
   test "reads the value from second register if value is second register address" do
     # register address starts at 32768
-    assert VirtualMachine.get_argument_value(32769, [6, 32769], [[],[66],[],[],[],[],[],[]])
+    assert VirtualMachine.get_argument_value(32769, [6, 32769], [0,66,0,0,0,0,0,0])
             == 66
   end
 
   test "gives the value back if not to be read from registers" do
     # register address starts at 32768
-    assert VirtualMachine.get_argument_value(444, [6, 444], [[],[],[],[],[],[],[],[]])
+    assert VirtualMachine.get_argument_value(444, [6, 444], [0,0,0,0,0,0,0,0])
             == 444
   end
 

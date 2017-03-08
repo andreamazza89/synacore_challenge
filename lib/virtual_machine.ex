@@ -19,15 +19,15 @@ defmodule VirtualMachine do
 
 
 
+
+
   def run_instructions(instructions) do
-    do_run_instructions({0, instructions, [[0],[0],[0],[0],[0],[0],[0],[0]], []})
+    do_run_instructions({0, instructions, [0,0,0,0,0,0,0,0], []})
   end
 
   def do_run_instructions(state = {cursor, instructions, registers, stack}) do
     current_instruction = Enum.at(instructions, cursor)
-#IO.puts current_instruction
-#IO.puts (Enum.at(instructions, cursor+1))
-#IO.puts (Enum.at(instructions, cursor+2))
+
     new_state = case current_instruction do
       0 ->
         exit (:shutdown)
@@ -52,7 +52,8 @@ defmodule VirtualMachine do
   end
 
   def jump_to_2nd_param_if_not_zero(state={cursor, instructions, registers, _stack}) do
-    if (Enum.at(instructions, cursor+1) == 0) do
+    first_parameter = get_argument_value(Enum.at(instructions, cursor+1), instructions, registers)
+    if (first_parameter == 0) do
       3
     else
       new_cursor_or_its_address = Enum.at(instructions, cursor+2)
@@ -62,7 +63,8 @@ defmodule VirtualMachine do
   end
 
   def jump_to_2nd_param_if_zero(state={cursor, instructions, registers, _stack}) do
-    if (Enum.at(instructions, cursor+1) == 0) do
+    first_parameter = get_argument_value(Enum.at(instructions, cursor+1), instructions, registers)
+    if (first_parameter == 0) do
       new_cursor_or_its_address = Enum.at(instructions, cursor+2)
       new_cursor = get_argument_value(new_cursor_or_its_address, instructions, registers)
       new_cursor - cursor
@@ -84,7 +86,6 @@ defmodule VirtualMachine do
   end
 
 
-
   def update_cursor({cursor, instructions, registers, stack}, cusor_offset) do
     new_cursor = cursor + cusor_offset
     {new_cursor, instructions, registers, stack}
@@ -93,8 +94,7 @@ defmodule VirtualMachine do
   def get_argument_value(address_or_value, instructions, registers) do
     if (register_address?(address_or_value)) do
       data_address = address_or_value - @address_start
-      [value] = Enum.at(registers, data_address)
-      value
+      Enum.at(registers, data_address)
     else
       address_or_value
     end
