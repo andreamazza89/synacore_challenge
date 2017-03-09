@@ -9,7 +9,7 @@ defmodule OperationNineteenTest do
       assert new_cursor == 2
     end)
 
-    assert console_out == "X"
+    assert console_out == "\u001B[34m"<>"X"<>"\u001B[0m"
   end
 
   test "operation 19-out: prints the referenced (ASCII) value to the console" do
@@ -20,7 +20,7 @@ defmodule OperationNineteenTest do
       assert new_cursor == 2
     end)
 
-    assert console_out == "Y"
+    assert console_out == "\u001B[34m"<>"Y"<>"\u001B[0m"
   end
 
 end

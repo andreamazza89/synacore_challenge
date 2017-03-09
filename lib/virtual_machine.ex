@@ -35,6 +35,8 @@ defmodule VirtualMachine do
         set_register(state)
       2 ->
         push_into_stack(state)
+      3 ->
+        pop_from_stack(state)
       4 ->
         set_to_one_if_equals(state)
       6 ->
@@ -50,7 +52,10 @@ defmodule VirtualMachine do
       21 ->
         no_operation(state)
       _ ->
-        IO.puts "**** operation not implemented: #{current_instruction} *****"
+        IO.puts "\u001B[34m"
+                  <>"\n**** operation not implemented: #{current_instruction} *****"
+                  <>"\n========================================================"
+                  <>"\u001B[0m"
     end
     do_run_instructions(new_state)
   end
@@ -87,6 +92,20 @@ defmodule VirtualMachine do
     new_cursor = cursor + 2
 
     {new_cursor, instructions, registers, new_stack}
+  end
+
+  def pop_from_stack(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    {update_to, new_stack} = List.pop_at(stack, -1)
+    if (update_to != nil) do
+      new_registers = List.replace_at(registers, register_to_update, update_to)
+      new_cursor = cursor + 2
+
+      {new_cursor, instructions, new_registers, new_stack}
+    else
+      IO.puts("\u001B[34m"<>"Error from operation 3: stack was empty"<>"\u001B[0m")
+      exit(:empty_stack_error)
+    end
   end
 
   def set_to_one_if_equals (state = {cursor, instructions, registers, stack}) do
@@ -132,7 +151,7 @@ defmodule VirtualMachine do
 
   def out_operation(state = {cursor, instructions, registers, stack}) do
     char_to_print = get_value_of(cursor+1, state)
-    IO.write([char_to_print])
+    IO.write("\u001B[34m" <> List.to_string([char_to_print]) <> "\u001B[0m")
 
     {cursor+2, instructions, registers, stack}
   end
