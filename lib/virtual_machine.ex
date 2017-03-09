@@ -36,68 +36,65 @@ defmodule VirtualMachine do
       6 ->
         jump(state)
       7 ->
-        jump_to_2nd_param_if_not_zero_7(state)
+        jump_to_2nd_param_if_not_zero(state)
       8 ->
-        jump_to_2nd_param_if_zero_8(state)
+        jump_to_2nd_param_if_zero(state)
       19 ->
-        out_operation_19(state)
+        out_operation(state)
       21 ->
-        no_operation_21(state)
+        no_operation(state)
       _ ->
         IO.puts "**** operation not implemented: #{current_instruction} *****"
     end
     do_run_instructions(new_state)
   end
 
-  def set_register(_state = {cursor, instructions, registers, stack}) do
+  def set_register(state = {cursor, instructions, registers, stack}) do
     register_to_update = Enum.at(instructions, cursor+1) - @first_register
-    update_to = get_argument_value(Enum.at(instructions, cursor+2), registers)
+    update_to = get_value_of(cursor+2, state)
 
     new_registers = List.replace_at(registers, register_to_update, update_to)
-
     new_cursor = cursor + 3
 
     {new_cursor, instructions, new_registers, stack}
   end
 
-  def jump(_state = {cursor, instructions, registers, stack}) do
-    new_cursor_or_its_address = Enum.at(instructions, cursor+1)
-    new_cursor = get_argument_value(new_cursor_or_its_address, registers)
+  def jump(state = {cursor, instructions, registers, stack}) do
+    new_cursor = get_value_of(cursor+1, state)
 
     {new_cursor, instructions, registers, stack}
   end
 
-  def jump_to_2nd_param_if_not_zero_7(state = {cursor, instructions, registers, stack}) do
-    first_parameter = get_argument_value(Enum.at(instructions, cursor+1), registers)
+  def jump_to_2nd_param_if_not_zero(state = {cursor, instructions, registers, stack}) do
+    first_parameter = get_value_of(cursor+1, state)
     new_cursor = jump_if(first_parameter != 0, state)
 
     {new_cursor, instructions, registers, stack}
   end
 
-  def jump_to_2nd_param_if_zero_8(state = {cursor, instructions, registers, stack}) do
-    first_parameter = get_argument_value(Enum.at(instructions, cursor+1), registers)
+  def jump_to_2nd_param_if_zero(state = {cursor, instructions, registers, stack}) do
+    first_parameter = get_value_of(cursor+1, state)
     new_cursor = jump_if(first_parameter == 0, state)
 
     {new_cursor, instructions, registers, stack}
   end
 
-  defp jump_if(should_jump, {cursor, instructions, registers, stack}) do
+  defp jump_if(should_jump, state = {cursor, _instructions, _registers, _stack}) do
     if (should_jump) do
-      new_cursor_or_its_address = Enum.at(instructions, cursor+2)
-      get_argument_value(new_cursor_or_its_address, registers)
+      get_value_of(cursor+2, state)
     else
       cursor + 3
     end
   end
 
-  def out_operation_19(_state = {cursor, instructions, registers, stack}) do
-    char_value_or_address = Enum.at(instructions, cursor+1)
-    char_to_print = get_argument_value(char_value_or_address, registers)
+  def out_operation(state = {cursor, instructions, registers, stack}) do
+    char_to_print = get_value_of(cursor+1, state)
     IO.write([char_to_print])
+
     {cursor+2, instructions, registers, stack}
   end
 
-  def no_operation_21(_state = {cursor, instructions, registers, stack}) do
+  def no_operation(_state = {cursor, instructions, registers, stack}) do
     {cursor+1, instructions, registers, stack}
   end
 
@@ -105,7 +102,9 @@ defmodule VirtualMachine do
 
 
 
-  def get_argument_value(address_or_value, registers) do
+
+  def get_value_of(cursor_of_value, _state = {_cursor, instructions, registers, _stack}) do
+    address_or_value = Enum.at(instructions, cursor_of_value)
     if (register_address?(address_or_value)) do
       data_address = address_or_value - @first_register
       Enum.at(registers, data_address)
