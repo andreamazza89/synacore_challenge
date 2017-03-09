@@ -33,12 +33,18 @@ defmodule VirtualMachine do
         exit (:shutdown)
       1 ->
         set_register(state)
+      2 ->
+        push_into_stack(state)
+      4 ->
+        set_to_one_if_equals(state)
       6 ->
         jump(state)
       7 ->
         jump_to_2nd_param_if_not_zero(state)
       8 ->
         jump_to_2nd_param_if_zero(state)
+      9 ->
+        add_registers(state)
       19 ->
         out_operation(state)
       21 ->
@@ -50,11 +56,48 @@ defmodule VirtualMachine do
   end
 
   def set_register(state = {cursor, instructions, registers, stack}) do
-    register_to_update = Enum.at(instructions, cursor+1) - @first_register
+    register_to_update = get_register_index(instructions, cursor)
     update_to = get_value_of(cursor+2, state)
 
     new_registers = List.replace_at(registers, register_to_update, update_to)
     new_cursor = cursor + 3
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+######  these two look very similar....
+
+  def add_registers(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = get_value_of(cursor+2, state) + get_value_of(cursor+3, state)
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 4
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  defp get_register_index(instructions, cursor) do
+    Enum.at(instructions, cursor+1) - @first_register
+  end
+
+  def push_into_stack(state = {cursor, instructions, registers, stack}) do
+    value_to_push = get_value_of(cursor+1, state)
+    new_stack = List.insert_at(stack, -1, value_to_push)
+    new_cursor = cursor + 2
+
+    {new_cursor, instructions, registers, new_stack}
+  end
+
+  def set_to_one_if_equals (state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = if (get_value_of(cursor+2, state) == get_value_of(cursor+3, state)) do
+                  1
+                else
+                  0
+                end
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 4
 
     {new_cursor, instructions, new_registers, stack}
   end
