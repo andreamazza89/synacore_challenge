@@ -14,4 +14,3 @@ defmodule OperationFourteenTest do
   end
 
 end
-

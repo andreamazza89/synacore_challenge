@@ -57,6 +57,8 @@ defmodule VirtualMachine do
         bitwise_or(state)
       14 ->
         bitwise_not(state)
+      17 ->
+        call(state)
       19 ->
         out_operation(state)
       21 ->
@@ -151,6 +153,13 @@ defmodule VirtualMachine do
   defp bit_padding(bits) do
     zeroes_to_add = 15 - String.length(bits)
     String.duplicate("0", zeroes_to_add) <> bits
+  end
+
+  def call(state = {cursor, instructions, registers, stack}) do
+    new_stack = List.insert_at(stack, -1, cursor+2)
+    new_cursor = get_value_of(cursor+1, state)
+
+    {new_cursor, instructions, registers, new_stack}
   end
 
   def pop_from_stack({cursor, instructions, registers, stack}) do
