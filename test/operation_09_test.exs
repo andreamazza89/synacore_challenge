@@ -25,4 +25,10 @@ defmodule OperationNineTest do
     assert [0, 3, 55, 0, 0, 0, 58, 0] == new_registers
   end
 
+  test "operation 9-add: modulo 32768" do
+    state = {0, [9, 32768, 32767, 2, 0], [0, 0, 0, 0, 0, 0, 0, 0], []}
+    {4,  [9, 32768, 32767, 2, 0], new_registers, []} = VirtualMachine.add_registers(state)
+    assert [1, 0, 0, 0, 0, 0, 0, 0] == new_registers
+  end
+
 end

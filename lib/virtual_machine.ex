@@ -1,8 +1,10 @@
 defmodule VirtualMachine do
+  use Bitwise
 
   @bit_size 16
   @first_register 32768
   @last_register 32775
+  @ascii_zero 48
 
   def load_binary(raw_binary_input) do
     do_load_binary([], raw_binary_input)
@@ -39,6 +41,8 @@ defmodule VirtualMachine do
         pop_from_stack(state)
       4 ->
         set_to_one_if_equals(state)
+      5 ->
+        set_to_one_if_greater(state)
       6 ->
         jump(state)
       7 ->
@@ -47,6 +51,12 @@ defmodule VirtualMachine do
         jump_to_2nd_param_if_zero(state)
       9 ->
         add_registers(state)
+      12 ->
+        bitwise_and(state)
+      13 ->
+        bitwise_or(state)
+      14 ->
+        bitwise_not(state)
       19 ->
         out_operation(state)
       21 ->
@@ -60,6 +70,12 @@ defmodule VirtualMachine do
     do_run_instructions(new_state)
   end
 
+### PROPOSED REFACTOR:
+###
+### `get_value_of` is always used with `cursor+n`, n being which parameter to extract
+### instead we could have a few functions with the parameter number baked in, for
+### instance: get_value_of(cursor+1, state) would become extract_1st_param(state)
+
   def set_register(state = {cursor, instructions, registers, stack}) do
     register_to_update = get_register_index(instructions, cursor)
     update_to = get_value_of(cursor+2, state)
@@ -70,11 +86,9 @@ defmodule VirtualMachine do
     {new_cursor, instructions, new_registers, stack}
   end
 
-######  these two look very similar....
-
   def add_registers(state = {cursor, instructions, registers, stack}) do
     register_to_update = get_register_index(instructions, cursor)
-    update_to = get_value_of(cursor+2, state) + get_value_of(cursor+3, state)
+    update_to = Integer.mod((get_value_of(cursor+2, state) + get_value_of(cursor+3, state)), @first_register)
 
     new_registers = List.replace_at(registers, register_to_update, update_to)
     new_cursor = cursor + 4
@@ -94,7 +108,52 @@ defmodule VirtualMachine do
     {new_cursor, instructions, registers, new_stack}
   end
 
-  def pop_from_stack(state = {cursor, instructions, registers, stack}) do
+  def bitwise_and(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = get_value_of(cursor+2, state) &&& get_value_of(cursor+3, state)
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 4
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  def bitwise_or(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = get_value_of(cursor+2, state) ||| get_value_of(cursor+3, state)
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 4
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  def bitwise_not(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    {update_to, _} = get_value_of(cursor+2, state)
+      |> Integer.to_string(2)
+      |> bit_padding
+      |> flip_bits
+      |> Integer.parse(2)
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 3
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  defp flip_bits(bits) do
+    bits
+      |> String.to_charlist
+      |> Enum.reduce("", fn(bit, acc) -> if(bit == @ascii_zero) do acc<>"1" else acc<>"0" end end)
+  end
+
+  defp bit_padding(bits) do
+    zeroes_to_add = 15 - String.length(bits)
+    String.duplicate("0", zeroes_to_add) <> bits
+  end
+
+  def pop_from_stack({cursor, instructions, registers, stack}) do
     register_to_update = get_register_index(instructions, cursor)
     {update_to, new_stack} = List.pop_at(stack, -1)
     if (update_to != nil) do
@@ -108,9 +167,17 @@ defmodule VirtualMachine do
     end
   end
 
-  def set_to_one_if_equals (state = {cursor, instructions, registers, stack}) do
+  def set_to_one_if_equals (state = {cursor, _instructions, _registers, _stack}) do
+    set_to_one_if(get_value_of(cursor+2, state) == get_value_of(cursor+3, state), state)
+  end
+
+  def set_to_one_if_greater (state = {cursor, _instructions, _registers, _stack}) do
+    set_to_one_if(get_value_of(cursor+2, state) > get_value_of(cursor+3, state), state)
+  end
+
+  def set_to_one_if(should_set, {cursor, instructions, registers, stack}) do
     register_to_update = get_register_index(instructions, cursor)
-    update_to = if (get_value_of(cursor+2, state) == get_value_of(cursor+3, state)) do
+    update_to = if (should_set) do
                   1
                 else
                   0
