@@ -51,16 +51,28 @@ defmodule VirtualMachine do
         jump_to_2nd_param_if_zero(state)
       9 ->
         add_registers(state)
+      10 ->
+        mult_registers(state)
+      11 ->
+        mod_registers(state)
       12 ->
         bitwise_and(state)
       13 ->
         bitwise_or(state)
       14 ->
         bitwise_not(state)
+      15 ->
+        rmem(state)
+      16 ->
+        wmem(state)
       17 ->
         call(state)
+      18 ->
+        ret(state)
       19 ->
         out_operation(state)
+      20 ->
+        input(state, :stdio)
       21 ->
         no_operation(state)
       _ ->
@@ -96,6 +108,51 @@ defmodule VirtualMachine do
     new_cursor = cursor + 4
 
     {new_cursor, instructions, new_registers, stack}
+  end
+
+  def mult_registers(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = Integer.mod((get_value_of(cursor+2, state) * get_value_of(cursor+3, state)), @first_register)
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 4
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  def mod_registers(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = Integer.mod(get_value_of(cursor+2, state), get_value_of(cursor+3, state))
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 4
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  def rmem(state = {cursor, instructions, registers, stack}) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = Enum.at(instructions, get_value_of(cursor+2, state))
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 3
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
+  def wmem(state = {cursor, instructions, registers, stack}) do
+    instructions_address_to_update = get_value_of(cursor+1, state)
+    update_to = get_value_of(cursor+2, state)
+
+    new_instructions = List.replace_at(instructions, instructions_address_to_update, update_to)
+    new_cursor = cursor + 3
+
+    {new_cursor, new_instructions, registers, stack}
+  end
+
+  def ret({_cursor, instructions, registers, stack}) do
+    {new_cursor, new_stack} = List.pop_at(stack, -1)
+    {new_cursor, instructions, registers, new_stack}
   end
 
   defp get_register_index(instructions, cursor) do
@@ -232,9 +289,22 @@ defmodule VirtualMachine do
     {cursor+2, instructions, registers, stack}
   end
 
+  def input(state = {cursor, instructions, registers, stack}, io) do
+    register_to_update = get_register_index(instructions, cursor)
+    update_to = IO.gets(io, "\n")
+                  |> String.to_charlist
+                  |> List.first
+
+    new_registers = List.replace_at(registers, register_to_update, update_to)
+    new_cursor = cursor + 2
+
+    {new_cursor, instructions, new_registers, stack}
+  end
+
   def no_operation(_state = {cursor, instructions, registers, stack}) do
     {cursor+1, instructions, registers, stack}
   end
+
 
 
 

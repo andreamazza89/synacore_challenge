@@ -4,14 +4,14 @@ defmodule SynacoreChallengeMainTest do
   #VM does not complain if it encounters values described as invalid in the arch-spec
   #this does not currently cause any problems but keep an eye out
 
-  test "run whole program" do
-    IO.puts "\u001B[34m"
-              <>"\n\n=========================================================="
-              <>"\u001B[0m"
-    binary = File.read!("./docs/challenge.bin")
-    instructions = VirtualMachine.load_binary(binary)
-    VirtualMachine.run_instructions(instructions)
-  end
+  #test "run whole program" do
+  #  IO.puts "\u001B[34m"
+  #            <>"\n\n=========================================================="
+  #            <>"\u001B[0m"
+  #  binary = File.read!("./docs/challenge.bin")
+  #  instructions = VirtualMachine.load_binary(binary)
+  #  VirtualMachine.run_instructions(instructions)
+  #end
 
   test "loads little endian 16-bit binary input into memory" do
     little_endian_binary_input = <<21, 0, 19, 15, 133, 1, "\n">>
